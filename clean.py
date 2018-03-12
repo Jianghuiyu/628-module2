@@ -28,7 +28,7 @@ def info(text):
     dquote = 0
     quest = 0
     price = 0
-    usestr = " "
+    usestr = []
     
     symbols = re.sub("[a-zA-Z]"," ",text).split()
     for e in symbols:
@@ -41,14 +41,14 @@ def info(text):
         elif '$' in e:
             price += 1
         elif e in usesym:
-            usestr += e+ " "
+            usestr +=[e]
     
     infovec += [quest,exclaim,dquote,price]
     text = re.sub("[^a-zA-Z]"," ",text).lower().split()
     infovec.append(len(text))
-    usestr = usestr.join(text)
+    text += usestr
     for word in useful:
-        infovec.append(usestr.count(word))
+        infovec += [text.count(word)]
     return infovec
     
 
