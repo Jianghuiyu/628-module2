@@ -89,7 +89,7 @@ def commons(dictionary):
                 count[i] = value/frequency[i]
             else:
                 count[i] = 0
-        if (np.std(count/max(count)) > 0.15) & (sum(count) > 0.01):
+        if (np.std(count/max(count)) > 0.1) & (sum(count) > 0.001):
             com_word[word] = count       
     return com_word
 
@@ -121,79 +121,18 @@ ggplot(aes(x="stars", weight="trust"),com ) +\
       ggtitle("trust") +\
       theme_bw()
 
-hpos_word = []
-pos_word = []
-neutral = []
-neg_word = []
-hneg_word = []
-extension = []
-
-## Make useful word and symbol table
-for word in useful:
-    weightstar = sum(useful_word[word]*useful_word['star'])/sum(useful_word[word])
-    if weightstar <= 2.2:
-        hneg_word += [word]
-    elif (weightstar > 2.2) & (weightstar <2.6):
-        neg_word += [word]
-    elif (weightstar > 3.25) & (weightstar <3.65):
-        pos_word += [word]
-    elif weightstar >= 3.65:
-        hpos_word += [word]
-    elif useful_word[word][2] < sum(useful_word[word])/6.5:
-        extension += [word]
-    else:
-        neutral += [word]
-
-for syms in usesym:
-    weightstar = sum(useful_sym[syms]*useful_sym['star'])/sum(useful_sym[syms])
-    if weightstar <= 2.2:
-        hneg_word += [syms]
-    elif (weightstar > 2.2) & (weightstar <2.6):
-        neg_word += [syms]
-    elif (weightstar > 3.25) & (weightstar <3.65):
-        pos_word += [syms]
-    elif weightstar >= 3.65:
-        hpos_word += [syms]
-    elif useful_sym[syms][2] < sum(useful_sym[syms])/6.5:
-        extension += [syms]
-    else:
-        neutral += [syms]
-
-reviews = reviews[['stars','name','text','date']]
-reviews['words'] = 0
-reviews['upper'] = 0
-reviews['exclaim'] = 0
-reviews['dquote'] = 0
-reviews['quest'] = 0
-reviews['price'] = 0
-reviews['highneg'] = 0
-reviews['neg'] = 0
-reviews['neutral'] = 0
-reviews['pos'] = 0
-reviews['highpos'] = 0
-reviews['extension'] = 0
-
-## apply useful features to process raw reviews
-rank = range(900000,1000000)
-for rowid in rank:
-    name = reviews.loc[rowid,'name']
-    reviews.loc[rowid,'name'] = re.sub("[^a-zA-Z]", "", name).lower()
-    review = reviews.loc[rowid,'text']
-    review = re.sub("n't",'not',review)
-    upper = [w for w in review.split() if (w.isupper()) & (w!='I')]
-    reviews.loc[rowid,'upper'] = len(upper)
-    symbols = re.sub("[a-zA-Z]", " ", review).split()
+def info(text):
+    infovec = []
+    text = re.sub("n't",'not',text)
+    upper = [w for w in text.split() if(w.isupper()) & (w!='I')]
+    infovec.append(len(upper))
     exclaim = 0
-    quest = 0
     dquote = 0
+    quest = 0
     price = 0
-    hpos = 0
-    pos = 0
-    neg = 0
-    hneg = 0
-    neu = 0
-    extens = 0
+    usestr = []
     
+    symbols = re.sub("[a-zA-Z]"," ",text).split()
     for e in symbols:
         if '?' in e:
             quest += 1
@@ -203,56 +142,28 @@ for rowid in rank:
             dquote += 1
         elif '$' in e:
             price += 1
-        elif e in hpos_word:
-            hpos += 1
-        elif e in pos_word:
-            pos += 1
-        elif e in neg_word:
-            neg += 1
-        elif e in hneg_word:
-            hneg += 1
-        elif e in neutral:
-            neu += 1
-        elif e in extension:
-            extens += 1
+        elif e in usesym:
+            usestr +=[e]
     
-    review = re.sub("[^a-zA-Z]", " ", review)
-    review = review.lower().split() 
-    reviews.loc[rowid,'words'] = len(review)
-    
-    for w in review:
-        clean = stem.stem(w)
-        if clean in hpos_word:
-            hpos += 1
-        elif clean in pos_word:
-            pos += 1
-        elif clean in neg_word:
-            neg += 1
-        elif clean in hneg_word:
-            hneg += 1
-        elif clean in neutral:
-            neu += 1
-        elif clean in extension:
-            extens += 1
-            
-    if rowid % 500 == 0:
-        print(rowid)
-    reviews.loc[rowid, 'exclaim'] = exclaim
-    reviews.loc[rowid, 'dquote'] = dquote
-    reviews.loc[rowid, 'quest'] = quest
-    reviews.loc[rowid, 'price'] = price
-    reviews.loc[rowid, 'highpos'] = hpos
-    reviews.loc[rowid, 'pos'] = pos
-    reviews.loc[rowid, 'neutral'] = neu
-    reviews.loc[rowid, 'neg'] = neg
-    reviews.loc[rowid, 'highneg'] = hneg
-    reviews.loc[rowid, 'extension'] = extens
+    infovec += [quest,exclaim,dquote,price]
+    text = re.sub("[^a-zA-Z]"," ",text).lower().split()
+    infovec.append(len(text))
+    text += usestr
+    for word in useful:
+        infovec += [text.count(word)]
+    return infovec
     
 
-
-
-
-
+import csv
+train1 = reviews.loc[range(100000),]
+with open("train1.csv","w", encoding = "utf-8") as final:
+    wr = csv.writer(final)
+    for id in train1.index.values:
+        sparsevec = [train1.loc[id,'stars']]
+        text = train1.loc[id,'text']
+        sparsevec += info(text)
+        wr.writerow(sparsevec)
+    
 
 
             
