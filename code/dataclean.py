@@ -155,15 +155,19 @@ def info(text):
     
 
 import csv
-train1 = reviews.loc[range(100000),]
-with open("train1.csv","w", encoding = "utf-8") as final:
+with open("train.csv","w", encoding = "utf-8") as final:
     wr = csv.writer(final)
-    for id in train1.index.values:
-        sparsevec = [train1.loc[id,'stars']]
-        text = train1.loc[id,'text']
+    for id in train.index.values:
+        sparsevec = [train.loc[id,'stars']]
+        text = train.loc[id,'text']
         sparsevec += info(text)
         wr.writerow(sparsevec)
     
-
+test = pd.read_csv("testval_data.csv")
+with open("test.csv","w", encoding = "utf-8") as final:
+    wr = csv.writer(final)
+    for id in test.index.values:
+        text = test.loc[id,'text']
+        wr.writerow(info(text))
 
             
